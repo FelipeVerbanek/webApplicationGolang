@@ -9,7 +9,7 @@ import (
 )
 
 func connectDB() *sql.DB {
-	connect := "user=postgres dbname=loja postgres=postgres host=localhost sslmode=disable"
+	connect := "user=postgres dbname=loja password=postgres host=localhost sslmode=disable"
 	db, err := sql.Open("postgres", connect)
 	if err != nil {
 		panic(err.Error())
@@ -19,6 +19,7 @@ func connectDB() *sql.DB {
 }
 
 type Produto struct {
+	Id         int
 	Nome       string
 	Descricao  string
 	Preco      float64
@@ -35,13 +36,32 @@ func main() {
 func index(w http.ResponseWriter, r *http.Request) {
 
 	db := connectDB()
-	defer db.Close()
+	selectAllProducts, err := db.Query("select * from produtos")
+	if err != nil {
+		panic(err.Error())
+	}
 
-	produtos := []Produto{
-		{"Camiseta", "Confortavel", 38, 3},
-		{"Tenis", "Confortavel", 89, 3},
-		{"Fone", "Confortavel", 59, 3},
+	p := Produto{}
+	produtos := []Produto{}
+
+	for selectAllProducts.Next() {
+		var id, quantidade int
+		var nome, descricao string
+		var preco float64
+
+		err = selectAllProducts.Scan(&id, &nome, &descricao, &preco, &quantidade)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		p.Nome = nome
+		p.Descricao = descricao
+		p.Preco = preco
+		p.Quantidade = quantidade
+
+		produtos = append(produtos, p)
 	}
 
 	templates.ExecuteTemplate(w, "Index", produtos)
+	defer db.Close()
 }
