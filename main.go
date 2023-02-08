@@ -1,9 +1,22 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 	"text/template"
+
+	_ "github.com/lib/pq"
 )
+
+func connectDB() *sql.DB {
+	connect := "user=postgres dbname=loja postgres=postgres host=localhost sslmode=disable"
+	db, err := sql.Open("postgres", connect)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return db
+}
 
 type Produto struct {
 	Nome       string
@@ -20,6 +33,9 @@ func main() {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
+
+	db := connectDB()
+	defer db.Close()
 
 	produtos := []Produto{
 		{"Camiseta", "Confortavel", 38, 3},
